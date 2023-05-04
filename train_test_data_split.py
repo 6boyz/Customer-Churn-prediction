@@ -1,32 +1,65 @@
+from typing import Callable
 import pandas as pd
 import numpy as np
 import datetime
+import math
 
 from consts import PATH, TEST_PATH, TRAIN_PATH
 from utils import print_log
 
-
+FIRST_DATA_DATE = datetime.date(2016, 1, 2)
 LAST_DATA_DATE = datetime.date(2023, 2, 23)
 
 
 class TrainTestSplitter:
+    _left_part_days: int
+    _right_part_days: int
+    _train_size: float
+    _save_test_path: str
+    _save_train_path: str
+    _part_n: int
+
+    _left_date: datetime
+    _unreturn_date: datetime
+    _right_date: datetime
+
     def __init__(
         self,
-        days_before_die: int = 32,
+        left_part_days: int = 95,
+        right_part_days: int = 95,
         train_size: float = 0.7,
         save_test_path: str = TEST_PATH,
         save_train_path: str = TRAIN_PATH,
+        part_n: int = 3,
     ) -> None:
-        self._days_before_die = days_before_die
+        self._left_part_days = left_part_days
+        self._right_part_days = right_part_days
         self._train_size = train_size
         self._save_test_path = save_test_path
         self._save_train_path = save_train_path
+        self._part_n = part_n + 1
+
+        self._unreturn_date = LAST_DATA_DATE - datetime.timedelta(
+            self._right_part_days * self._part_n
+        )
+        self._left_date = self._unreturn_date - datetime.timedelta(self._left_part_days)
+        self._right_date = self._unreturn_date + datetime.timedelta(
+            self._right_part_days
+        )
+
+    def _calc_parts_count(days_count: int) -> int:
+        return math.ceil((LAST_DATA_DATE - FIRST_DATA_DATE).days / days_count)
 
     def _calc_alive(self) -> set[int]:
         print_log("Alive partners calculation")
         data = pd.read_parquet(PATH)
-        unreturn_date = LAST_DATA_DATE - datetime.timedelta(self._days_before_die)
-        alive_partners = set(data[data["rep_date"] >= unreturn_date]["partner"].values)
+
+        alive_partners = set(
+            data[
+                (data["rep_date"] >= self._unreturn_date)
+                & (data["rep_date"] < self._right_date)
+            ]["partner"].values
+        )
         return alive_partners
 
     def _split(
@@ -43,23 +76,14 @@ class TrainTestSplitter:
 
     def _create_rfm(self, raw_data: pd.DataFrame) -> pd.DataFrame:
         print_log("Creating RFM")
+        grouping = raw_data.groupby("partner", as_index=True)
         rfm = pd.concat(
             [
-                raw_data.groupby("partner", as_index=True).agg(
-                    monetary_value=("monetary", np.mean)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    first_buy=("rep_date", np.min)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    last_buy=("rep_date", np.max)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    count=("partner", np.size)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    alive=("is_alive", np.max)
-                ),
+                grouping.agg(monetary_value=("monetary", np.mean)),
+                grouping.agg(first_buy=("rep_date", np.min)),
+                grouping.agg(last_buy=("rep_date", np.max)),
+                grouping.agg(count=("partner", np.size)),
+                grouping.agg(alive=("is_alive", np.max)),
             ],
             axis=1,
         )
@@ -76,10 +100,17 @@ class TrainTestSplitter:
     def _get_alive_raw(self) -> pd.DataFrame:
         alive = self._calc_alive()
         data = pd.read_parquet(PATH)
-        unreturn_date = LAST_DATA_DATE - datetime.timedelta(self._days_before_die)
-        data = data[data["rep_date"] < unreturn_date]
+        data = data[
+            (data["rep_date"] < self._unreturn_date)
+            & (data["rep_date"] >= self._left_date)
+        ]
         data["is_alive"] = data["partner"].apply(lambda x: x in alive)
         return data
+
+    def _save_data(self, get_data_func: Callable) -> None:
+        Y, X = get_data_func().values()
+        Y.to_parquet(TEST_PATH)
+        X.to_parquet(TRAIN_PATH)
 
     def get_splited_raw(self) -> dict["Y" : pd.DataFrame, "X" : pd.DataFrame]:
         print_log("Getting splited alive partners data")
@@ -91,15 +122,11 @@ class TrainTestSplitter:
 
     def save_splited_raw(self) -> None:
         print_log("Save splitted raw")
-        Y, X = self.get_splited_raw().values()
-        Y.to_parquet(TEST_PATH)
-        X.to_parquet(TRAIN_PATH)
+        self._save_data(self.get_splited_raw)
 
     def save_splited_rfm(self) -> None:
         print_log("Save splitted rfm")
-        Y, X = self.get_splited_rfm().values()
-        Y.to_parquet(TEST_PATH)
-        X.to_parquet(TRAIN_PATH)
+        self._save_data(self.get_splited_rfm)
 
 
 if __name__ == "__main__":
