@@ -107,10 +107,12 @@ class TrainTestSplitter:
         data["is_alive"] = data["partner"].apply(lambda x: x in alive)
         return data
 
-    def _save_data(self, get_data_func: Callable) -> None:
+    def _save_data(self, get_data_func: Callable, train_path: str=None, test_path: str=None) -> None:
+        if not train_path: train_path = TRAIN_PATH
+        if not test_path: test_path = TEST_PATH
         Y, X = get_data_func().values()
-        Y.to_parquet(TEST_PATH)
-        X.to_parquet(TRAIN_PATH)
+        Y.to_parquet(test_path)
+        X.to_parquet(train_path)
 
     def get_splited_raw(self) -> dict["Y" : pd.DataFrame, "X" : pd.DataFrame]:
         print_log("Getting splited alive partners data")
@@ -120,14 +122,14 @@ class TrainTestSplitter:
         print_log("Getting splited alive partners rfm")
         return self._split(self._create_rfm(self._get_alive_raw()))
 
-    def save_splited_raw(self) -> None:
+    def save_splited_raw(self, train_path: str=None, test_path: str=None) -> None:
         print_log("Save splitted raw")
-        self._save_data(self.get_splited_raw)
+        self._save_data(self.get_splited_raw, train_path, test_path)
 
-    def save_splited_rfm(self) -> None:
+    def save_splited_rfm(self, train_path: str=None, test_path: str=None) -> None:
         print_log("Save splitted rfm")
-        self._save_data(self.get_splited_rfm)
+        self._save_data(self.get_splited_rfm, train_path, test_path)
 
 
 if __name__ == "__main__":
-    TrainTestSplitter().save_splited_rfm()
+    TrainTestSplitter(left_part_days=180).save_splited_rfm()
