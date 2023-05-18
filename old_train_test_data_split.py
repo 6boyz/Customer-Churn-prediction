@@ -94,4 +94,4 @@ class OldTrainTestSplitter:
 
 
 if __name__ == "__main__":
-    OldTrainTestSplitter().save_splited_rfm()
+    OldTrainTestSplitter(days_before_die=90).save_splited_rfm()
