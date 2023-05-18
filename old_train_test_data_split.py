@@ -43,23 +43,14 @@ class OldTrainTestSplitter:
 
     def _create_rfm(self, raw_data: pd.DataFrame) -> pd.DataFrame:
         print_log("Creating RFM")
+        grouped = raw_data.groupby("partner", as_index=True)
         rfm = pd.concat(
             [
-                raw_data.groupby("partner", as_index=True).agg(
-                    monetary_value=("monetary", np.mean)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    first_buy=("rep_date", np.min)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    last_buy=("rep_date", np.max)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    count=("partner", np.size)
-                ),
-                raw_data.groupby("partner", as_index=True).agg(
-                    alive=("is_alive", np.max)
-                ),
+                grouped.agg(monetary_value=("monetary", np.mean)),
+                grouped.agg(first_buy=("rep_date", np.min)),
+                grouped.agg(last_buy=("rep_date", np.max)),
+                grouped.agg(count=("partner", np.size)),
+                grouped.agg(alive=("is_alive", np.max)),
             ],
             axis=1,
         )
