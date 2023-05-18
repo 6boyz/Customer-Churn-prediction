@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import math
 
-from consts import PATH, TEST_PATH, TRAIN_PATH, TEST_RAW_PATH, TRAIN_RAW_PATH
+from consts import PATH, TEST_180_PATH, TRAIN_180_PATH, TEST_RAW_PATH, TRAIN_RAW_PATH
 from utils import print_log
 
 FIRST_DATA_DATE = datetime.date(2016, 1, 2)
@@ -28,15 +28,11 @@ class TrainTestSplitter:
         left_part_days: int = 95,
         right_part_days: int = 95,
         train_size: float = 0.7,
-        save_test_path: str = TEST_PATH,
-        save_train_path: str = TRAIN_PATH,
         part_n: int = 3,
     ) -> None:
         self._left_part_days = left_part_days
         self._right_part_days = right_part_days
         self._train_size = train_size
-        self._save_test_path = save_test_path
-        self._save_train_path = save_train_path
         self._part_n = part_n + 1
 
         self._unreturn_date = LAST_DATA_DATE - datetime.timedelta(
@@ -90,7 +86,7 @@ class TrainTestSplitter:
 
         rfm["frequency"] = rfm["count"] - 1
         rfm["recency"] = rfm["last_buy"] - rfm["first_buy"]
-        rfm["T"] = LAST_DATA_DATE - rfm["first_buy"]
+        rfm["T"] = self._right_date - rfm["first_buy"]
 
         rfm["recency"] = rfm["recency"].apply(lambda x: x.days)
         rfm["T"] = rfm["T"].apply(lambda x: x.days)
@@ -110,10 +106,6 @@ class TrainTestSplitter:
     def _save_data(
         self, get_data_func: Callable, train_path: str = None, test_path: str = None
     ) -> None:
-        if not train_path:
-            train_path = TRAIN_PATH
-        if not test_path:
-            test_path = TEST_PATH
         Y, X = get_data_func().values()
         Y.to_parquet(test_path)
         X.to_parquet(train_path)
@@ -138,4 +130,4 @@ class TrainTestSplitter:
 if __name__ == "__main__":
     splitter = TrainTestSplitter(left_part_days=180)
     splitter.save_splited_raw(test_path=TEST_RAW_PATH, train_path=TRAIN_RAW_PATH)
-    splitter.save_splited_rfm()
+    splitter.save_splited_rfm(test_path=TEST_180_PATH, train_path=TRAIN_180_PATH)
