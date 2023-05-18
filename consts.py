@@ -5,3 +5,6 @@ MODEL_PATH_180_DAYS = "model\\rfm.model.180.days.pkl"
 
 TRAIN_PATH = "data\\train.parquet.gzip"
 TEST_PATH = "data\\test.parquet.gzip"
+
+TRAIN_RAW_PATH = "data\\train.raw.parquet.gzip"
+TEST_RAW_PATH = "data\\test.raw.parquet.gzip"

@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import math
 
-from consts import PATH, TEST_PATH, TRAIN_PATH
+from consts import PATH, TEST_PATH, TRAIN_PATH, TEST_RAW_PATH, TRAIN_RAW_PATH
 from utils import print_log
 
 FIRST_DATA_DATE = datetime.date(2016, 1, 2)
@@ -107,9 +107,13 @@ class TrainTestSplitter:
         data["is_alive"] = data["partner"].apply(lambda x: x in alive)
         return data
 
-    def _save_data(self, get_data_func: Callable, train_path: str=None, test_path: str=None) -> None:
-        if not train_path: train_path = TRAIN_PATH
-        if not test_path: test_path = TEST_PATH
+    def _save_data(
+        self, get_data_func: Callable, train_path: str = None, test_path: str = None
+    ) -> None:
+        if not train_path:
+            train_path = TRAIN_PATH
+        if not test_path:
+            test_path = TEST_PATH
         Y, X = get_data_func().values()
         Y.to_parquet(test_path)
         X.to_parquet(train_path)
@@ -122,14 +126,16 @@ class TrainTestSplitter:
         print_log("Getting splited alive partners rfm")
         return self._split(self._create_rfm(self._get_alive_raw()))
 
-    def save_splited_raw(self, train_path: str=None, test_path: str=None) -> None:
+    def save_splited_raw(self, train_path: str = None, test_path: str = None) -> None:
         print_log("Save splitted raw")
         self._save_data(self.get_splited_raw, train_path, test_path)
 
-    def save_splited_rfm(self, train_path: str=None, test_path: str=None) -> None:
+    def save_splited_rfm(self, train_path: str = None, test_path: str = None) -> None:
         print_log("Save splitted rfm")
         self._save_data(self.get_splited_rfm, train_path, test_path)
 
 
 if __name__ == "__main__":
-    TrainTestSplitter(left_part_days=180).save_splited_rfm()
+    splitter = TrainTestSplitter(left_part_days=180)
+    splitter.save_splited_raw(test_path=TEST_RAW_PATH, train_path=TRAIN_RAW_PATH)
+    splitter.save_splited_rfm()
