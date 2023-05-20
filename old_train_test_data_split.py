@@ -14,13 +14,9 @@ class OldTrainTestSplitter:
         self,
         days_before_die: int = 32,
         train_size: float = 0.7,
-        save_test_path: str = TEST_PATH,
-        save_train_path: str = TRAIN_PATH,
     ) -> None:
         self._days_before_die = days_before_die
         self._train_size = train_size
-        self._save_test_path = save_test_path
-        self._save_train_path = save_train_path
 
     def _calc_alive(self) -> set[int]:
         print_log("Alive partners calculation")
@@ -80,17 +76,17 @@ class OldTrainTestSplitter:
         print_log("Getting splited alive partners rfm")
         return self._split(self._create_rfm(self._get_alive_raw()))
 
-    def save_splited_raw(self) -> None:
+    def save_splited_raw(self, train: str, test: str) -> None:
         print_log("Save splitted raw")
         Y, X = self.get_splited_raw().values()
-        Y.to_parquet(TEST_PATH)
-        X.to_parquet(TRAIN_PATH)
+        Y.to_parquet(test)
+        X.to_parquet(train)
 
-    def save_splited_rfm(self) -> None:
+    def save_splited_rfm(self, train: str, test: str) -> None:
         print_log("Save splitted rfm")
         Y, X = self.get_splited_rfm().values()
-        Y.to_parquet(TEST_PATH)
-        X.to_parquet(TRAIN_PATH)
+        Y.to_parquet(test)
+        X.to_parquet(train)
 
 
 if __name__ == "__main__":
