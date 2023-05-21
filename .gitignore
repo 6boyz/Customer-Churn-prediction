@@ -129,7 +129,5 @@ dmypy.json
 .pyre/
 
 # Project
-/data/train.parquet.gzip
-/data/test.parquet.gzip
-/data/wallet_urfu.parquet.gzip
-/model
+/model/*
+/data/*

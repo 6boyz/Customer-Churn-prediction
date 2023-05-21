@@ -129,5 +129,5 @@ class TrainTestSplitter:
 
 if __name__ == "__main__":
     splitter = TrainTestSplitter(left_part_days=180)
-    splitter.save_splited_raw(test_path=TEST_RAW_PATH, train_path=TRAIN_RAW_PATH)
-    splitter.save_splited_rfm(test_path=TEST_180_PATH, train_path=TRAIN_180_PATH)
+    splitter.save_splited_raw(test_path="./data/raw.test.left.180.right.95.parquet.gzip", train_path="./data/raw.train.left.180.right.95.parquet.gzip")
+    splitter.save_splited_rfm(test_path="./data/rfm.test.left.180.right.95.parquet.gzip", train_path="./data/rfm.train.left.180.right.95.parquet.gzip")
